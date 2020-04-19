@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const tmi = require("tmi.js");
-const port = 3000;
+const port = process.env.PORT || 3000;
 const bodyParser = require("body-parser");
 const moment = require("moment");
 const cors = require("cors");
@@ -69,7 +69,7 @@ client.connect(() => {
         twitchChannel: req.params.channel,
         twitchAuthor: req.params.nickname,
       })
-      .toArray(function(error, documents) {
+      .toArray(function (error, documents) {
         if (error) throw error;
 
         res.send(documents);
