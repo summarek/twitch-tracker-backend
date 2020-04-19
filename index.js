@@ -15,23 +15,16 @@ const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-client.connect(() => {
-  const collection = client.db("test").collection("messages");
+client.connect(async () => {
+  const collection = await client.db("test").collection("messages");
+  console.log("connected to database!");
+
   const opts = {
     identity: {
       username: process.env.TWITCH_NICKNAME,
       password: process.env.TWITCH_AUTH,
     },
-    channels: [
-      "summarek",
-      "h2p_gucio",
-      "adamcy_",
-      "demonzz1",
-      "paramaxil",
-      "qeebs",
-      "patiro",
-      "franio",
-    ],
+    channels: ["summarek"],
   };
 
   const twitchClient = new tmi.client(opts);
@@ -41,11 +34,11 @@ client.connect(() => {
 
   twitchClient.connect();
 
-  function onMessageHandler(target, user, msg) {
+  async function onMessageHandler(target, user, msg) {
     const commandName = msg.trim();
     let author = user["display-name"];
     let messageChannel = target.slice(1);
-    collection.insertOne({
+    await collection.insertOne({
       twitchChannel: messageChannel,
       twitchAuthor: author,
       twitchMessage: commandName,
@@ -63,8 +56,8 @@ client.connect(() => {
     })
   );
 
-  app.get("/:channel/:nickname", (req, res) => {
-    collection
+  app.get("/:channel/:nickname", async (req, res) => {
+    await collection
       .find({
         twitchChannel: req.params.channel,
         twitchAuthor: req.params.nickname,
