@@ -18,6 +18,11 @@ const client = new MongoClient(uri, {
 client.connect(async () => {
   const collection = await client.db("test").collection("messages");
   console.log("connected to database!");
+  collection.find().toArray(function (error, documents) {
+    if (error) throw error;
+
+    res.send(documents);
+  });
 
   const opts = {
     identity: {
