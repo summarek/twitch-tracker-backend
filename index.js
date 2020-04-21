@@ -6,30 +6,34 @@ const bodyParser = require("body-parser");
 const moment = require("moment");
 const cors = require("cors");
 
+const https = require('https');
+const fs = require('fs');
+var key = fs.readFileSync(__dirname + '/selfsigned.key');
+var cert = fs.readFileSync(__dirname + '/selfsigned.crt');
+var options = {   key: key,   cert: cert };
+
+
+
+
 require("dotenv").config();
 
 //MONGODB
 const MongoClient = require("mongodb").MongoClient;
-const uri = `mongodb+srv://${process.env.MONGODB_NICKNAME}:${process.env.MONGODB_PASSWORD}@mongodatabase-tt40v.mongodb.net/test?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, {
+//const uri = `mongodb+srv://${process.env.MONGODB_NICKNAME}:${process.env.MONGODB_PASSWORD}@mongodatabase-tt40v.mongodb.net/test?retryWrites=true&w=majority`;
+const client = new MongoClient("mongodb://127.0.0.1:27017", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-client.connect(async () => {
-  const collection = await client.db("test").collection("messages");
-  console.log("connected to database!");
-  collection.find().toArray(function (error, documents) {
-    if (error) throw error;
-
-    res.send(documents);
-  });
+client.connect(() => {
+  const collection = client.db("test").collection("messages");
+  console.log("connected to database!")
 
   const opts = {
     identity: {
       username: process.env.TWITCH_NICKNAME,
       password: process.env.TWITCH_AUTH,
     },
-    channels: ["summarek"],
+    channels: ["summarek", "h2p_gucio", "demonzz1", "adamcy_", "franio"],
   };
 
   const twitchClient = new tmi.client(opts);
@@ -41,7 +45,7 @@ client.connect(async () => {
 
   async function onMessageHandler(target, user, msg) {
     const commandName = msg.trim();
-    let author = user["display-name"];
+    let author = user["display-name"].toLowerCase();
     let messageChannel = target.slice(1);
     await collection.insertOne({
       twitchChannel: messageChannel,
@@ -62,17 +66,18 @@ client.connect(async () => {
   );
 
   app.get("/:channel/:nickname", async (req, res) => {
-    await collection
+    var channelLow = new RegExp(["^", req.params.channel, "$"].join(""), "i");
+var nickLow = new RegExp(["^", req.params.nickname, "$"].join(""), "i");
+	await collection
       .find({
-        twitchChannel: req.params.channel,
-        twitchAuthor: req.params.nickname,
+        twitchChannel: channelLow,
+        twitchAuthor: nickLow,
       })
       .toArray(function (error, documents) {
         if (error) throw error;
 
-        res.send(documents);
+        res.send(documents.reverse());
       });
   });
-
   app.listen(port, () => console.log(`Example app listening on port ${port}!`));
 });
